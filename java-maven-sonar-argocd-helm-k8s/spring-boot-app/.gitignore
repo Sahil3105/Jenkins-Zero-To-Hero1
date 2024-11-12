@@ -1,0 +1,22 @@
+# Ignore Maven target directory
+target/
+
+# Ignore IntelliJ IDEA files
+.idea/
+*.iml
+
+# Ignore Eclipse files
+.project
+.classpath
+.settings/
+
+# Ignore OS-specific files
+.DS_Store   # macOS
+Thumbs.db   # Windows
+
+# Ignore logs
+*.log
+
+# Ignore temporary files created by editors
+*~
+*.swp
