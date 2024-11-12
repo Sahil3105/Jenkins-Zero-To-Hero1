@@ -9,8 +9,8 @@ pipeline {
     stage('Checkout') {
       steps {
         echo 'Checkout stage: passed'
-        // Uncomment the next line if you want to actually checkout the code
-        git branch: 'main', url: 'https://github.com/iam-veeramalla/Jenkins-Zero-To-Hero1.git'
+        // Actual code checkout should be uncommented here
+        git branch: 'main', url: 'https://github.com/Sahil3105/Jenkins-Zero-To-Hero1.git'
       }
     }
     stage('Build and Test') {
@@ -22,17 +22,18 @@ pipeline {
     }
     stage('Static Code Analysis') {
       environment {
-        SONAR_URL = "http://34.228.39.126:9000"
+        SONAR_URL = "http://34.228.39.126:9000"  // Adjust the URL if needed
       }
       steps {
         withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
+          // Run sonar analysis
           sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && mvn sonar:sonar -Dsonar.login=$SONAR_AUTH_TOKEN -Dsonar.host.url=${SONAR_URL}'
         }
       }
     }
     stage('Build and Push Docker Image') {
       environment {
-        DOCKER_IMAGE = "sahil3105/ultimate-cicd:${BUILD_NUMBER}"
+        DOCKER_IMAGE = "sahil3105/ultimate-cicd:${BUILD_NUMBER}"  // This will use Jenkins Build number
         REGISTRY_CREDENTIALS = credentials('docker-cred')
       }
       steps {
@@ -59,6 +60,7 @@ pipeline {
             git config user.email "abhishek.xyz@gmail.com"
             git config user.name "Abhishek Veeramalla"
             BUILD_NUMBER=${BUILD_NUMBER}
+            # Update the image tag in deployment.yml file with the current build number
             sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
             git add java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
             git commit -m "Update deployment image to version ${BUILD_NUMBER}"
