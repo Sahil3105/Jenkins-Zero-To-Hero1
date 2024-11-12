@@ -1,35 +1,44 @@
 pipeline {
     agent any
-    
+
     environment {
-        DOCKER_IMAGE = "sahil3105/ultimate-cicd:${BUILD_NUMBER}"
-        GIT_URL = 'https://github.com/yourusername/yourrepo.git'
+        // Set any environment variables you need, for example, Docker Hub credentials.
+        DOCKER_IMAGE = 'sahil3105/ultimate-cicd:8'
+        DOCKER_REGISTRY = 'docker.io'
     }
 
     stages {
-        stage('Checkout Code') {
+        stage('Declarative: Checkout SCM') {
             steps {
                 checkout scm
+            }
+        }
+
+        stage('Checkout Code') {
+            steps {
+                script {
+                    // Pull latest changes from your GitHub repo
+                    git url: 'https://github.com/Sahil3105/Jenkins-Zero-To-Hero1', branch: 'main'
+                }
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Build Docker image
-                    sh '''
-                        docker build -t ${DOCKER_IMAGE} .
-                    '''
+                    // Build Docker image using the Dockerfile from the spring-boot-app folder
+                    docker.build("${DOCKER_IMAGE}", "spring-boot-app/")
                 }
             }
         }
 
         stage('Login to Docker Registry') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'docker-cred', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                    sh '''
-                        echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin
-                    '''
+                script {
+                    // Login to Docker Hub (Add your credentials here)
+                    docker.withRegistry("https://${DOCKER_REGISTRY}", 'dockerhub-credentials') {
+                        // Optional: Add any other commands you may need in this stage
+                    }
                 }
             }
         }
@@ -37,11 +46,10 @@ pipeline {
         stage('Tag and Push Docker Image') {
             steps {
                 script {
-                    // Tag Docker image
-                    sh '''
-                        docker tag ${DOCKER_IMAGE} index.docker.io/sahil3105/ultimate-cicd:${BUILD_NUMBER}
-                        docker push index.docker.io/sahil3105/ultimate-cicd:${BUILD_NUMBER}
-                    '''
+                    // Push Docker image to Docker Hub registry
+                    docker.withRegistry("https://${DOCKER_REGISTRY}", 'dockerhub-credentials') {
+                        docker.image("${DOCKER_IMAGE}").push()
+                    }
                 }
             }
         }
@@ -49,14 +57,10 @@ pipeline {
         stage('Update Deployment File') {
             steps {
                 script {
-                    // Update deployment file with new image tag
-                    sh '''
-                        git config user.email "abhishek.xyz@gmail.com"
-                        git config user.name "Abhishek Veeramalla"
-                        sed -i 's/replaceImageTag/${BUILD_NUMBER}/g' java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
-                        git add java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
-                        git commit -m "Update deployment image to version ${BUILD_NUMBER}"
-                    '''
+                    // Update Kubernetes deployment file if needed (e.g., update image tag)
+                    sh """
+                        sed -i 's|image:.*|image: ${DOCKER_IMAGE}|g' k8s/deployment.yaml
+                    """
                 }
             }
         }
@@ -64,10 +68,9 @@ pipeline {
         stage('Push Changes to Git') {
             steps {
                 script {
-                    // Push changes back to the repository
-                    sh '''
-                        git push origin HEAD:main
-                    '''
+                    // Push changes to the repository (if any)
+                    git commit message: "Updated deployment image tag", "--all"
+                    git push
                 }
             }
         }
@@ -75,18 +78,19 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 script {
-                    // Assuming kubectl and kubernetes setup is correct
-                    sh '''
-                        kubectl apply -f java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
-                    '''
+                    // Apply Kubernetes deployment
+                    sh "kubectl apply -f k8s/deployment.yaml"
                 }
             }
         }
     }
 
     post {
+        always {
+            echo 'Pipeline execution finished.'
+        }
         success {
-            echo 'Deployment completed successfully!'
+            echo 'Deployment successful.'
         }
         failure {
             echo 'Deployment failed. Please check the logs for errors.'
