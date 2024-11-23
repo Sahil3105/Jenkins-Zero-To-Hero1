@@ -10,7 +10,7 @@ pipeline {
       steps {
         echo 'Checkout stage: passed'
         // Uncomment the next line if you want to actually checkout the code
-        // git branch: 'main', url: 'https://github.com/Sahil3105/Jenkins-Zero-To-Hero1.git'
+         git branch: 'main', url: 'https://github.com/Sahil3105/Jenkins-Zero-To-Hero1.git'
       }
     }
     stage('Build and Test') {
