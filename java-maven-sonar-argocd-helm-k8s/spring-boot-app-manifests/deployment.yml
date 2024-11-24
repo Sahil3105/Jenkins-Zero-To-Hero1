@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
       - name: spring-boot-app
-        image: sahil3105/ultimate-cicd:replaceImageTag # Placeholder for dynamic image tag
+        image: sahil3105/ultimate-cicd:4 # Placeholder for dynamic image tag
         ports:
         - containerPort: 8080
